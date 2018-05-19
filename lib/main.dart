@@ -1,8 +1,11 @@
 import 'dart:convert';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:meetup_event_signin/attendees/AttendeeList.dart';
 import 'package:meetup_event_signin/attendees/model/Attendee.dart';
+
+const bool DEBUG = true;
 
 void main() {
   runApp(MaterialApp(
@@ -19,14 +22,34 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    fetchRsvps(context);
+    if (DEBUG) {
+      fetchRsvps(context);
+    } else {
+      fetchRsvpsFromFirestore(context);
+    }
   }
 
-  void navigateToRevpList(BuildContext context, List<Attendee> rsvps) {
+  void navigateToRsvpList(BuildContext context, List<Attendee> rsvps) {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (context) => RsvpListPage(rsvps)),
     );
+  }
+
+  void fetchRsvpsFromFirestore(BuildContext context) async {
+    List<Attendee> attendees = [];
+
+    var docs = await Firestore.instance
+        .collection("events")
+        .document("io2018")
+        .collection("rsvps")
+        .where("attending", isEqualTo: false)
+        .where("meetup_rsvp", isEqualTo: true)
+        .getDocuments();
+
+    docs.documents.forEach((doc) => attendees.add(Attendee.fromQuery(doc)));
+
+    navigateToRsvpList(context, attendees);
   }
 
   void fetchRsvps(BuildContext context) async {
@@ -40,7 +63,7 @@ class _SplashScreenState extends State<SplashScreen> {
       attendees.add(Attendee.fromJson(r));
     }
 
-    navigateToRevpList(context, attendees);
+    navigateToRsvpList(context, attendees);
   }
 
   @override
@@ -79,49 +102,3 @@ class RsvpListState extends State<RsvpListPage> {
     );
   }
 }
-
-//class HomePage extends StatefulWidget {
-//  @override
-//  State createState() => HomePageState();
-//}
-//
-//class HomePageState extends State<HomePage> {
-//  List<Attendee> attendees;
-//
-//  Future<String> getData(BuildContext context) async {
-////    var response = await http.get(
-////        Uri.encodeFull(
-////            "https://api.meetup.com/2/rsvps?offset=0&format=json&event_id=249472955&photo-host=public&page=75&fields=&order=event&desc=false&sig_id=155262402&sig=1bf9a75b2981f2d0e83ff277334362e161e8acc3"),
-////        headers: {"Accept": "application/json"});
-////    var _attendees = response.body;
-//    var _attendees = await DefaultAssetBundle
-//        .of(context)
-//        .loadString('assets/attendees.json');
-//
-////    this.setState(() {
-//    var results = json.decode(_attendees)['results'];
-//    attendees = [];
-//    for (var r in results) {
-//      attendees.add(Attendee.fromJson(r));
-//    }
-////    });
-//  }
-//
-//  @override
-//  void initState() {
-//    super.initState();
-//    this.getData(context);
-//  }
-//
-//  @override
-//  Widget build(BuildContext context) {
-//    return Scaffold(
-//      appBar: AppBar(
-//        title: Text("Attendees"),
-//      ),
-//      body: attendees == null
-//          ? Text("Loading")
-//          : AttendeeList(attendees, (a) => print(a.name)),
-//    );
-//  }
-//}
