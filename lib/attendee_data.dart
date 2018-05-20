@@ -18,8 +18,9 @@ class Attendee {
       snapshot.data['attending'],
       snapshot.data['meetupRsvp']);
 
-  factory Attendee.fromEntry(String fName, String lName) =>
-      Attendee(null, "$fName $lName", null, true, false);
+  factory Attendee.fromEntry(
+          DocumentReference docRef, String fName, String lName) =>
+      Attendee(docRef, "$fName $lName", null, false, false);
 
   Map<String, dynamic> toMap() => {
         "name": name,

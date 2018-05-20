@@ -2,9 +2,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:meetup_event_signin/attendee_data.dart';
 import 'package:meetup_event_signin/globals.dart' as globals;
+import 'package:meetup_event_signin/manual_entry.dart';
 import 'package:meetup_event_signin/rsvp_list_screen.dart';
 
 class HomeScreen extends StatelessWidget {
+  final scaffoldKey = GlobalKey<ScaffoldState>();
+
   final CollectionReference rsvpRef = Firestore.instance
       .collection(globals.EVENTS_COLLECTION)
       .document(globals.EVENT_NAME)
@@ -13,6 +16,7 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: scaffoldKey,
       appBar: AppBar(),
       body: Center(
         child: SizedBox(
@@ -31,7 +35,7 @@ class HomeScreen extends StatelessWidget {
               RaisedButton(
                 child: Text("No"),
                 onPressed: () {
-                  print("");
+                  showManualEntry(context);
                 },
               )
             ],
@@ -43,16 +47,35 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
+  void showManualEntry(BuildContext context) async {
+    Attendee a = await Navigator.of(context).push(MaterialPageRoute<Attendee>(
+        builder: (context) => ManualEntryPage(rsvpRef)));
+
+    if (a != null) {
+      scaffoldKey.currentState.showSnackBar(
+        SnackBar(
+          duration: Duration(seconds: 3),
+          content:
+              Text("${a.name}, you're signed in.  Please enjoy the event!"),
+        ),
+      );
+    }
+  }
+
   void showRsvpList(BuildContext context) async {
-    await Navigator.of(context).push(
+    Attendee a = await Navigator.of(context).push(
           MaterialPageRoute<Attendee>(
               builder: (context) => RsvpListPage(rsvpRef)),
         );
 
-    Scaffold.of(context).showSnackBar(
-          SnackBar(
-            content: Text("You're not signed in.  Enjoy the event"),
-          ),
-        );
+    if (a != null) {
+      scaffoldKey.currentState.showSnackBar(
+        SnackBar(
+          duration: Duration(seconds: 3),
+          content:
+              Text("${a.name}, you're signed in.  Please enjoy the event!"),
+        ),
+      );
+    }
   }
 }
