@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:meetup_event_signin/attendees/model/Attendee.dart';
-import 'package:transparent_image/transparent_image.dart';
 
 typedef void AttendeeClicked(Attendee a);
 
@@ -13,10 +12,11 @@ class AttendeeListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var avatar = _attendee.imageUrl != null
-        ? FadeInImage.memoryNetwork(
-            placeholder: kTransparentImage,
-            image: _attendee.imageUrl,
-            fit: BoxFit.fill,
+        ? CircleAvatar(
+            radius: 20.0,
+            backgroundImage: NetworkImage(
+              _attendee.imageUrl,
+            ),
           )
         : null;
     return Card(

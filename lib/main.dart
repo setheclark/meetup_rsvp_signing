@@ -2,10 +2,9 @@ import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:meetup_event_signin/attendees/AttendeeList.dart';
 import 'package:meetup_event_signin/attendees/model/Attendee.dart';
-
-const bool DEBUG = true;
+import 'package:meetup_event_signin/globals.dart' as globals;
+import 'package:meetup_event_signin/home_screen.dart';
 
 void main() {
   runApp(MaterialApp(
@@ -22,7 +21,7 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    if (DEBUG) {
+    if (globals.IS_DEBUG) {
       fetchRsvps(context);
     } else {
       fetchRsvpsFromFirestore(context);
@@ -32,7 +31,7 @@ class _SplashScreenState extends State<SplashScreen> {
   void navigateToRsvpList(BuildContext context, List<Attendee> rsvps) {
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => RsvpListPage(rsvps)),
+      MaterialPageRoute(builder: (context) => HomeScreen(rsvps)),
     );
   }
 
@@ -40,9 +39,9 @@ class _SplashScreenState extends State<SplashScreen> {
     List<Attendee> attendees = [];
 
     var docs = await Firestore.instance
-        .collection("events")
-        .document("io2018")
-        .collection("rsvps")
+        .collection(globals.EVENTS_COLLECTION)
+        .document(globals.EVENT_NAME)
+        .collection(globals.RSVP_COLLECTION)
         .where("attending", isEqualTo: false)
         .where("meetup_rsvp", isEqualTo: true)
         .getDocuments();
@@ -72,33 +71,6 @@ class _SplashScreenState extends State<SplashScreen> {
       body: Center(
         child: Image.asset('assets/gdg_charlotte_logo.png'),
       ),
-    );
-  }
-}
-
-class RsvpListPage extends StatefulWidget {
-  final List<Attendee> attendees;
-
-  RsvpListPage(this.attendees);
-
-  @override
-  State<StatefulWidget> createState() => RsvpListState(attendees);
-}
-
-class RsvpListState extends State<RsvpListPage> {
-  List<Attendee> _attendees;
-
-  RsvpListState(this._attendees);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("Attendees"),
-      ),
-      body: _attendees == null
-          ? Text("Loading")
-          : AttendeeList(_attendees, (a) => print(a.name)),
     );
   }
 }
