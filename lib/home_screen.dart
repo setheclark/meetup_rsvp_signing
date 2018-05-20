@@ -1,39 +1,19 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:meetup_event_signin/attendees/model/Attendee.dart';
+import 'package:meetup_event_signin/attendee_data.dart';
+import 'package:meetup_event_signin/globals.dart' as globals;
 import 'package:meetup_event_signin/rsvp_list_screen.dart';
 
-class HomeScreen extends StatefulWidget {
-  final List<Attendee> _attendees;
-
-  HomeScreen(this._attendees);
-
-  @override
-  State<StatefulWidget> createState() => _HomeState(_attendees);
-}
-
-class _HomeState extends State<HomeScreen> {
-  final List<Attendee> _attendees;
-
-  _HomeState(this._attendees);
-
-  void showRsvpList() async {
-    var attendingRsvp = await Navigator.of(context).push(
-          MaterialPageRoute<Attendee>(
-              builder: (context) => RsvpListPage(_attendees)),
-        );
-
-    if (attendingRsvp != null) {
-      //TODO Remove from firestore
-      setState(() {});
-      _attendees.remove(attendingRsvp);
-    }
-  }
-
-  void showManualEntry() {}
+class HomeScreen extends StatelessWidget {
+  final CollectionReference rsvpRef = Firestore.instance
+      .collection(globals.EVENTS_COLLECTION)
+      .document(globals.EVENT_NAME)
+      .collection(globals.RSVP_COLLECTION);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(),
       body: Center(
         child: SizedBox(
           child: Column(
@@ -43,7 +23,7 @@ class _HomeState extends State<HomeScreen> {
                 child: RaisedButton(
                   child: Text("Yes"),
                   onPressed: () {
-                    showRsvpList();
+                    showRsvpList(context);
                   },
                 ),
                 padding: const EdgeInsets.symmetric(vertical: 16.0),
@@ -61,5 +41,18 @@ class _HomeState extends State<HomeScreen> {
         ),
       ),
     );
+  }
+
+  void showRsvpList(BuildContext context) async {
+    await Navigator.of(context).push(
+          MaterialPageRoute<Attendee>(
+              builder: (context) => RsvpListPage(rsvpRef)),
+        );
+
+    Scaffold.of(context).showSnackBar(
+          SnackBar(
+            content: Text("You're not signed in.  Enjoy the event"),
+          ),
+        );
   }
 }

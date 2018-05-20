@@ -1,23 +1,35 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:meetup_event_signin/attendees/AttendeeList.dart';
-import 'package:meetup_event_signin/attendees/model/Attendee.dart';
+import 'package:meetup_event_signin/attendee_data.dart';
 import 'package:meetup_event_signin/globals.dart' as globals;
 
 class RsvpListPage extends StatelessWidget {
-  final List<Attendee> attendees;
+  final CollectionReference rsvpRef;
 
-  RsvpListPage(this.attendees);
+  RsvpListPage(this.rsvpRef);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Attendees"),
+        title: Text("Select from list"),
+        centerTitle: true,
       ),
-      body: attendees == null
-          ? Text("Loading")
-          : AttendeeList(attendees, (a) => showConfirmationDialog(context, a)),
+      body: StreamBuilder(
+        stream: rsvpRef
+            .where(globals.ATTENDING_KEY, isEqualTo: false)
+            .where(globals.MEETUP_RSVP_KEY, isEqualTo: true)
+            .snapshots(),
+        builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+          if (!snapshot.hasData) return const Text('Loading...');
+          var attendees = snapshot.data.documents
+              .map((snapshot) => Attendee.fromSnapshot(snapshot))
+              .toList();
+
+          return AttendeeList(
+              attendees, (a) => showConfirmationDialog(context, a));
+        },
+      ),
     );
   }
 
@@ -27,14 +39,14 @@ class RsvpListPage extends StatelessWidget {
         builder: (BuildContext context) {
           return Center(
             child: AlertDialog(
-              title: Text("Sign in"),
+              title: Text("Sign in?"),
               content: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: <Widget>[
                   CircleAvatar(
                     radius: 50.0,
                     backgroundImage: NetworkImage(
-                      a.imageUrl,
+                      a.profilePic,
                     ),
                   ),
                   Padding(
@@ -64,13 +76,8 @@ class RsvpListPage extends StatelessWidget {
           );
         })) {
       a.isAttending = true;
-      print(a.documentId);
-      await Firestore.instance
-          .collection(globals.EVENTS_COLLECTION)
-          .document(globals.EVENT_NAME)
-          .collection(globals.RSVP_COLLECTION)
-          .document(a.documentId)
-          .setData(a.toMap());
+      a.save();
+      print(a.reference.documentID);
       Navigator.of(context).pop(a);
     }
   }
